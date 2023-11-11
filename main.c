@@ -9,6 +9,7 @@ int main() {
         printf("otvorilo subor");
     }
     fclose(f);
+
     return 0;
 }
 
