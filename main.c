@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-void uvolni();
+
 
 typedef struct {
     char oznacenie;   // Veľké písmeno z intervalu <A, Z>
@@ -24,6 +24,8 @@ typedef struct dani{
     char dat[9];
     struct dani *dalsi;
 }DANI;
+void uvolni(DANI *head);
+
 
 void n(FILE **f,DANI **head,int *count){
 
@@ -67,7 +69,7 @@ void n(FILE **f,DANI **head,int *count){
         sscanf(line, "%c %3d %c", &new_record->id.oznacenie, &new_record->id.cislovanie, &new_record->id.druh);
 
         fgets(line, sizeof(line), *f);
-        sscanf(line, "%8s %8s", new_record->poz.latitude, new_record->poz.longitude);
+        sscanf(line, "%8s%8s", new_record->poz.latitude, new_record->poz.longitude);
 
 
         fgets(line,sizeof(line),*f);
@@ -121,7 +123,124 @@ void v(DANI *head,int count) {
 
 }
 
-void uvolni(){
+void p(DANI **head,int *count) {
+    int pozicia;
+    printf("ake cislo:");
+    scanf("%d", &pozicia);
+
+    DANI *new_record = (DANI *) malloc(sizeof(DANI));
+    if (new_record == NULL) {
+        perror("Chyba pri prideľovaní pamäte");
+        exit(EXIT_FAILURE);
+    }
+
+    char idn[6];
+    char pozn[15];
+    char typn[3];
+    char hodn[7];
+    char casn[5];
+    char datn[9];
+
+
+    printf("Enter ID (up to 5 characters): ");
+    scanf("%5s", idn);
+    sscanf(idn, "%c%d%c", &new_record->id.oznacenie, &new_record->id.cislovanie, &new_record->id.druh);
+
+
+
+    printf("Enter Position (up to 14 characters): ");
+    scanf("%14s", pozn);
+
+    //форматуєм в запис якій нам потрібне
+    char part1[8];
+    char part2[8];
+    double num;
+
+    sscanf(pozn,"%7s%7s", part1, part2);//розділяюмо на дві частини
+
+    num = atof(part1);
+    num/=10000;//робим точку після 2 цифр
+    sprintf(new_record->poz.latitude, "+%.4lf", num);//правильно записуємо
+
+    num = atof(part2);
+    num/=10000;
+    sprintf(new_record->poz.longitude, "+%.4lf", num);
+    //
+
+
+    printf("Enter Type (up to 2 characters): ");
+    scanf("%2s", typn);
+    strcpy(new_record->typ, typn);
+
+
+    printf("Enter Value (up to 6 characters): ");
+    scanf("%6s", hodn);
+    strcpy(new_record->hod, hodn);
+
+    printf("Enter Time (up to 4 characters): ");
+    scanf("%4s", casn);
+    strcpy(new_record->cas, casn);
+
+    printf("Enter Date (up to 8 characters): ");
+    scanf("%8s", datn);
+    strcpy(new_record->dat, datn);
+
+
+    //
+    printf("\n");
+    printf("ID: %c%3d%c\t%s\t%s\n", new_record->id.oznacenie, new_record->id.cislovanie, new_record->id.druh,
+           new_record->typ, new_record->hod);
+    printf("Poz: %s\t%s\n", new_record->poz.latitude, new_record->poz.longitude);
+    printf("DaC: %s\t%s\n", new_record->dat, new_record->cas);
+    printf("\n");
+    // Виведення результатів
+    printf("ID: %s\n", idn);
+    printf("Poz: %s\n", pozn);
+    printf("Typ: %s\n", typn);
+    printf("Hod: %s\n", hodn);
+    printf("Cas: %s\n", casn);
+    printf("Dat: %s\n", datn);
+
+    // Вставка нового запису на певне місце
+    if (pozicia == 1 || *head == NULL) {
+        // Вставка в початок списку
+        new_record->dalsi = *head;
+        *head = new_record;
+    } else {
+        // Вставка в середину списку
+        DANI *current = *head;
+        int i=1;
+
+        while (current!=NULL&&i<pozicia-1){
+            current = current->dalsi;
+            i++;
+        }
+
+        if(current!=NULL){
+            new_record->dalsi=current->dalsi;
+            current->dalsi=new_record;
+        }else{
+            // Якщо вказана позиція більша за кількість елементів у списку, вставте в кінець
+            while (current->dalsi!=NULL){
+                current=current->dalsi;
+            }
+            new_record->dalsi=NULL;
+            current->dalsi=new_record;
+        }
+
+    }
+    (*count)++;
+}
+
+void uvolni(DANI *head){
+    DANI *current = head;
+    DANI *next;
+
+    while (current != NULL) {
+        next = current->dalsi;
+        free(current);
+        current = next;
+    }
 }
 
 int main() {
@@ -139,12 +258,14 @@ int main() {
         if (option == 'v') {
             v(head,count);
         }
+        if (option == 'p') {
+            p(&head,&count);
+        }
         if (option == 'k') {
             fclose(f);
-            uvolni();
+            uvolni(head);
             m=0;
         }
     }
-
     return 0;
 }
